@@ -14,6 +14,7 @@ export async function startDiscordBot(
   value: number | string,
   date: Date,
 ) {
+  return
   if (!discordClient) {
     discordClient = new Client({
       intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages],
