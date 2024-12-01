@@ -1,34 +1,17 @@
 "use client"
+import { startDiscordBot } from "@/discord/discord-bot"
 import { database } from "@/firebase/config"
 import { ref, onValue, off } from "@/firebase/config"
 import { createContext, useContext, useEffect, useState } from "react"
+import schedule from "node-schedule"
+import moment from "moment-timezone"
 
-interface ledState {
+interface LedState {
   ledStatus: boolean
   date: string
 }
 
-interface ldrState {
-  ldr: number
-  date: string
-}
-
-interface distState {
-  dist: number
-  date: string
-}
-
-interface motionState {
-  motion: number
-  date: string
-}
-
-interface smokeState {
-  smk: number
-  date: string
-}
-
-interface log {
+interface Log {
   dist: number
   ldr: number
   motion: number
@@ -36,21 +19,28 @@ interface log {
   timestamp: number
 }
 
+interface Payment {
+  date: string
+  description: string
+  status: string
+}
+
 interface FirebaseDataContextType {
-  ledState: ledState[]
+  ledState: LedState[]
 
   buttonState: boolean
 
-  payments: object[]
+  payments: Payment[]
 
-  currentLedState: ledState
+  currentLedState: LedState
 
-  logState: log[]
+  logState: Log[]
 
-  currentLDRState: ldrState
-  currentDistState: distState
-  currentMotionState: motionState
-  currentSmokeState: smokeState
+  currentLDRState: number
+  currentDistState: number
+  currentMotionState: number
+  currentSmokeState: number
+  currentTimeStampState: number
 }
 
 const defaultValue: FirebaseDataContextType = {
@@ -62,22 +52,11 @@ const defaultValue: FirebaseDataContextType = {
     date: "",
   },
   logState: [],
-  currentLDRState: {
-    ldr: 0,
-    date: "",
-  },
-  currentDistState: {
-    dist: 0,
-    date: "",
-  },
-  currentMotionState: {
-    motion: 0,
-    date: "",
-  },
-  currentSmokeState: {
-    smk: 0,
-    date: "",
-  },
+  currentLDRState: 0,
+  currentDistState: 0,
+  currentMotionState: 0,
+  currentSmokeState: 0,
+  currentTimeStampState: 0,
 }
 
 const FirebaseDataContext = createContext<FirebaseDataContextType>(defaultValue)
@@ -87,26 +66,50 @@ export const FirebaseDataProvider = ({
 }: {
   children: React.ReactNode
 }) => {
-  const [ledState, setLedState] = useState<ledState[]>([])
+  const [ledState, setLedState] = useState<LedState[]>([])
   const [buttonState, setButtonState] = useState(false)
-  const [payments, setPayments] = useState<object[]>([])
+  const [payments, setPayments] = useState<Payment[]>([])
 
-  const [logState, setLogState] = useState<log[]>([])
-  const [currentLedState, setCurrentLedState] = useState<ledState>(
+  const [logState, setLogState] = useState<Log[]>([])
+  const [currentLedState, setCurrentLedState] = useState<LedState>(
     defaultValue.currentLedState,
   )
-  const [currentLDRState, setCurrentLDRState] = useState<ldrState>(
+  const [currentLDRState, setCurrentLDRState] = useState<number>(
     defaultValue.currentLDRState,
   )
-  const [currentDistState, setCurrentDistState] = useState<distState>(
+  const [currentDistState, setCurrentDistState] = useState<number>(
     defaultValue.currentDistState,
   )
-  const [currentMotionState, setCurrentMotionState] = useState<motionState>(
+  const [currentMotionState, setCurrentMotionState] = useState<number>(
     defaultValue.currentMotionState,
   )
-  const [currentSmokeState, setCurrentSmokeState] = useState<smokeState>(
+  const [currentSmokeState, setCurrentSmokeState] = useState<number>(
     defaultValue.currentSmokeState,
   )
+  const [currentTimeStampState, setCurrentTimeStampState] = useState<number>(
+    defaultValue.currentTimeStampState,
+  )
+
+  function schedulePaymentTasks(payments: Payment[]) {
+    if (!payments) return
+
+    payments.forEach((payment) => {
+      const paymentDate = moment(payment.date)
+      console.log(paymentDate.isAfter(moment()))
+      if (paymentDate.isAfter(moment())) {
+        schedule.scheduleJob(paymentDate.toDate(), () =>
+          startDiscordBot(
+            "payments",
+            payment.description,
+            paymentDate.toDate(),
+          ),
+        )
+        // console.log(
+        //   `Scheduled task for payment desc: ${payment.description} on ${paymentDate.format()}`,
+        // )
+      }
+    })
+  }
 
   useEffect(() => {
     const ledStateRef = ref(database, "ledStateLog")
@@ -114,14 +117,34 @@ export const FirebaseDataProvider = ({
     const paymentsRef = ref(database, "payments")
     const currentLedStateRef = ref(database, "currentLedState")
     const logStateRef = ref(database, "log")
-    const currentLDRStateRef = ref(database, "currentLDR")
-    const currentDistStateRef = ref(database, "currentDist")
-    const currentMotionStateRef = ref(database, "currentMotion")
-    const currentSmokeStateRef = ref(database, "currentSmoke")
+    const currentLDRStateRef = ref(database, "currentState/LDR")
+    const currentDistStateRef = ref(database, "currentState/dist")
+    const currentMotionStateRef = ref(database, "currentState/motion")
+    const currentSmokeStateRef = ref(database, "currentState/smk")
+    const currentTimeStampStateRef = ref(database, "currentState/timestamp")
+
+    onValue(
+      currentTimeStampStateRef,
+      (snapshot) => {
+        setCurrentTimeStampState(snapshot.val())
+      },
+      (error) => {
+        console.error("Error reading currentTimeStampState:", error)
+      },
+    )
 
     onValue(
       currentLDRStateRef,
-      (snapshot) => setCurrentLDRState(snapshot.val()),
+      (snapshot) => {
+        if (snapshot.val() >= 1500) {
+          startDiscordBot(
+            "ldr",
+            snapshot.val(),
+            new Date(currentTimeStampState),
+          )
+        }
+        setCurrentLDRState(snapshot.val())
+      },
       (error) => {
         console.error("Error reading currentLDRState:", error)
       },
@@ -129,7 +152,16 @@ export const FirebaseDataProvider = ({
 
     onValue(
       currentDistStateRef,
-      (snapshot) => setCurrentDistState(snapshot.val()),
+      (snapshot) => {
+        if (snapshot.val() < 100) {
+          // startDiscordBot(
+          //   "dist",
+          //   snapshot.val(),
+          //   new Date(currentTimeStampState),
+          // )
+        }
+        setCurrentDistState(snapshot.val())
+      },
       (error) => {
         console.error("Error reading currentDistState:", error)
       },
@@ -145,7 +177,16 @@ export const FirebaseDataProvider = ({
 
     onValue(
       currentSmokeStateRef,
-      (snapshot) => setCurrentSmokeState(snapshot.val()),
+      (snapshot) => {
+        if (snapshot.val() >= 500) {
+          startDiscordBot(
+            "smoke",
+            snapshot.val(),
+            new Date(currentTimeStampState),
+          )
+        }
+        setCurrentSmokeState(snapshot.val())
+      },
       (error) => {
         console.error("Error reading currentSmokeState:", error)
       },
@@ -187,7 +228,12 @@ export const FirebaseDataProvider = ({
 
     onValue(
       paymentsRef,
-      (snapshot) => setPayments(snapshot.val()),
+      (snapshot) => {
+        // console.log("payments", snapshot.val())
+        setPayments(snapshot.val())
+        schedule.gracefulShutdown()
+        schedulePaymentTasks(Object.values(snapshot.val()))
+      },
       (error) => {
         console.error("Error reading payments:", error)
       },
@@ -199,6 +245,11 @@ export const FirebaseDataProvider = ({
       off(paymentsRef)
       off(currentLedStateRef)
       off(logStateRef)
+      off(currentLDRStateRef)
+      off(currentDistStateRef)
+      off(currentMotionStateRef)
+      off(currentSmokeStateRef)
+      off(currentTimeStampStateRef)
     }
   }, [])
 
@@ -214,6 +265,7 @@ export const FirebaseDataProvider = ({
         currentDistState,
         currentMotionState,
         currentSmokeState,
+        currentTimeStampState,
       }}
     >
       {children}
