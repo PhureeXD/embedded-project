@@ -8,11 +8,13 @@ import { Input } from "@/components/ui/input"
 import { Loader2 } from "lucide-react"
 import { initializeGeminiApi, generateGeminiResponse } from "@/gemini/geminiApi"
 import Markdown from "react-markdown"
+import moment from "moment-timezone"
 
 export function GeminiAnalysis() {
   const {
     currentLDRState,
     currentDistState,
+    currentLoudnessState,
     currentMotionState,
     currentSmokeState,
     currentTimeStampState,
@@ -42,20 +44,26 @@ export function GeminiAnalysis() {
     setIsLoading(true)
     try {
       const prompt = `Analyze the following sensor data and provide insights:
-        LDR (Light): ${currentLDRState} lux
-        Distance: ${currentDistState} cm
+        LDR (Light): ${currentLDRState} 
+        Distance: ${currentDistState} 
+        Loudness: ${currentLoudnessState}
         Motion: ${currentMotionState}
-        Smoke: ${currentSmokeState} ppm
-        Timestamp: ${new Date(currentTimeStampState).toLocaleString()}
-        
+        Smoke: ${currentSmokeState} 
+        Timestamp: ${moment(currentTimeStampState).toLocaleString()}
+        (default value from sensors without knowing the units)
         Please provide a brief analysis of the current state of the environment based on these sensor readings. 
-        Include any potential issues or anomalies, and suggest any actions that might need to be taken.`
+        you can use markdown text style too. Let the first line prompt the value of the sensor data.`
 
       const result = await generateGeminiResponse(prompt)
       setAnalysis(result)
     } catch (error) {
       console.error("Error analyzing sensor data:", error)
-      setAnalysis("Error occurred while analyzing the data.")
+
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error"
+
+      setAnalysis(`Error occurred while analyzing the data.
+        ${errorMessage}`)
     } finally {
       setIsLoading(false)
     }
@@ -87,17 +95,19 @@ export function GeminiAnalysis() {
       <CardHeader>
         <CardTitle className="text-center">Gemini Sensor Analysis</CardTitle>
       </CardHeader>
-      <CardContent className="text-center">
-        <Button onClick={analyzeSensorData} disabled={isLoading}>
-          {isLoading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Analyzing...
-            </>
-          ) : (
-            "Analyze Sensor Data"
-          )}
-        </Button>
+      <CardContent>
+        <p className="text-center">
+          <Button onClick={analyzeSensorData} disabled={isLoading}>
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Analyzing...
+              </>
+            ) : (
+              "Analyze Sensor Data"
+            )}
+          </Button>
+        </p>
         {analysis && (
           <div className="mt-4 p-4 bg-secondary rounded-md">
             <h3 className="font-bold underline mb-2">Analysis Results:</h3>

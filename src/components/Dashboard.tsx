@@ -11,6 +11,7 @@ import {
 import { GeminiAnalysis } from "./GeminiAnalysis"
 import { useEffect, useState } from "react"
 import { formatValue } from "@/lib/utils"
+import moment from "moment-timezone"
 
 const Dashboard = () => {
   const {
@@ -25,7 +26,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (currentTimeStampState) {
-      setClientTimeStamp(new Date(currentTimeStampState).toLocaleString())
+      setClientTimeStamp(moment(currentTimeStampState).format("LLL"))
     }
   }, [currentTimeStampState])
 
@@ -61,7 +62,7 @@ const Dashboard = () => {
       <h1 className="text-3xl font-bold mb-6 text-center">Sensor Dashboard</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {cards.map((card, index) => (
-          <Card key={index} className="shadow-lg">
+          <Card key={index} className="shadow-md">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-md font-medium">
                 {card.title}
@@ -71,7 +72,7 @@ const Dashboard = () => {
             <CardContent>
               <div className="text-2xl font-bold">{card.value}</div>
               <p className="text-xs text-muted-foreground">
-                Last updated:
+                Last updated:{" "}
                 {clientTimeStamp && clientTimeStamp.toLocaleString()}
               </p>
             </CardContent>

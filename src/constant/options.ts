@@ -210,4 +210,53 @@ const smkOptions: ChartOptions<"line"> = {
   },
 }
 
-export { options, distOptions, ldrOptions, motionOptions, smkOptions }
+const loudnessOptions: ChartOptions<"line"> = {
+  responsive: true,
+  plugins: {
+    filler: {
+      propagate: true,
+    },
+    legend: {
+      position: "top",
+      display: true,
+    },
+    title: {
+      display: true,
+      text: "Loudness Over Time",
+      font: {
+        size: 18, // Increase the size as needed
+      },
+    },
+  },
+  scales: {
+    x: {
+      title: {
+        display: true,
+        align: "end",
+        text: "Time",
+        font: {
+          size: 14,
+        },
+      },
+    },
+    y: {
+      beginAtZero: true,
+      title: {
+        display: true,
+        text: "Loudness",
+        font: {
+          size: 14,
+        },
+      },
+    },
+  },
+}
+
+export {
+  options,
+  distOptions,
+  ldrOptions,
+  motionOptions,
+  smkOptions,
+  loudnessOptions,
+}
