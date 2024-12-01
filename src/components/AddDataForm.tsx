@@ -44,6 +44,7 @@ export function AddDataForm() {
   const form = useForm<FormData>({
     defaultValues: {
       status: "processing",
+      description: "",
     },
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -174,8 +175,11 @@ export function AddDataForm() {
                         control={form.control}
                         render={({ field }) => (
                           <DateTimePicker
-                            date={field.value}
-                            setDate={(date) => field.onChange(date)}
+                            date={field.value || new Date()}
+                            setDate={(date) => {
+                              if (!date) return
+                              field.onChange(date)
+                            }}
                           />
                         )}
                       />
