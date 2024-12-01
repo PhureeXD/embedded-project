@@ -9,6 +9,7 @@ import {
   query,
   orderByChild,
   limitToLast,
+  update,
 } from "firebase/database"
 
 const firebaseConfig = {
@@ -34,4 +35,5 @@ export {
   query,
   orderByChild,
   limitToLast,
+  update,
 }

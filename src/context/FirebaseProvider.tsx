@@ -1,6 +1,6 @@
 "use client"
 import { startDiscordBot } from "@/discord/discord-bot"
-import { database } from "@/firebase/config"
+import { database, update } from "@/firebase/config"
 import { ref, onValue, off } from "@/firebase/config"
 import { createContext, useContext, useEffect, useState } from "react"
 import schedule from "node-schedule"
@@ -14,6 +14,7 @@ interface LedState {
 interface Log {
   dist: number
   ldr: number
+  loudness: number
   motion: number
   smk: number
   timestamp: number
@@ -38,6 +39,7 @@ interface FirebaseDataContextType {
 
   currentLDRState: number
   currentDistState: number
+  currentLoudnessState: number
   currentMotionState: number
   currentSmokeState: number
   currentTimeStampState: number
@@ -54,12 +56,11 @@ const defaultValue: FirebaseDataContextType = {
   logState: [],
   currentLDRState: 0,
   currentDistState: 0,
+  currentLoudnessState: 0,
   currentMotionState: 0,
   currentSmokeState: 0,
   currentTimeStampState: Date.now(),
 }
-
-const FirebaseDataContext = createContext<FirebaseDataContextType>(defaultValue)
 
 let lastNotificationTime = 0
 
@@ -70,6 +71,41 @@ const debounceNotification = (callback: () => void, delay: number) => {
     lastNotificationTime = currentTime
   }
 }
+
+const loggedDataTimestamps = new Set<number>()
+
+const handleLogDataToSheet = async (data: {
+  dist: number
+  ldr: number
+  loudness: number
+  motion: number
+  smk: number
+  timestamp: number
+}) => {
+  if (loggedDataTimestamps.has(data.timestamp)) return
+  loggedDataTimestamps.add(data.timestamp)
+
+  try {
+    const response = await fetch("/api/log-data", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    })
+
+    if (!response.ok) {
+      throw new Error("Failed to log data")
+    }
+
+    // const result = await response.json()
+    // console.log("Data logged successfully:", result)
+  } catch (error) {
+    console.error("Error logging data:", error)
+  }
+}
+
+const FirebaseDataContext = createContext<FirebaseDataContextType>(defaultValue)
 
 export const FirebaseDataProvider = ({
   children,
@@ -87,6 +123,11 @@ export const FirebaseDataProvider = ({
   const [currentLDRState, setCurrentLDRState] = useState<number>(
     defaultValue.currentLDRState,
   )
+
+  const [currentLoudnessState, setCurrentLoudnessState] = useState<number>(
+    defaultValue.currentLoudnessState,
+  )
+
   const [currentDistState, setCurrentDistState] = useState<number>(
     defaultValue.currentDistState,
   )
@@ -100,21 +141,24 @@ export const FirebaseDataProvider = ({
     defaultValue.currentTimeStampState,
   )
 
-  function schedulePaymentTasks(payments: Payment[]) {
-    if (!payments) return
+  function schedulePaymentTasks(payment: Payment, paymentKey: string) {
+    if (!payment) return
 
-    payments.forEach((payment) => {
-      const paymentDate = moment(payment.date)
-      if (paymentDate.isAfter(moment())) {
-        schedule.scheduleJob(paymentDate.toDate(), () =>
-          startDiscordBot(
-            "payments",
-            payment.description,
-            paymentDate.toDate(),
-          ),
+    const paymentDate = moment(payment.date)
+
+    if (paymentDate.isAfter(moment())) {
+      schedule.scheduleJob(paymentDate.toDate(), async () => {
+        await startDiscordBot(
+          "payments",
+          payment.description,
+          paymentDate.toDate(),
         )
-      }
-    })
+        // Update the status to "success" in Firebase
+        await update(ref(database, `payments/${paymentKey}`), {
+          status: "success",
+        })
+      })
+    }
   }
 
   useEffect(() => {
@@ -126,13 +170,14 @@ export const FirebaseDataProvider = ({
     const logStateRef = ref(database, "log")
     const currentLDRStateRef = ref(database, "currentState/LDR")
     const currentDistStateRef = ref(database, "currentState/dist")
+    const currentLoudnessStateRef = ref(database, "currentState/loudness")
     const currentMotionStateRef = ref(database, "currentState/motion")
     const currentSmokeStateRef = ref(database, "currentState/smk")
+    const currentState = ref(database, "currentState")
 
     onValue(
       currentTimeStampStateRef,
       (snapshot) => {
-        console.log("currentTimeStampState", snapshot.val())
         setCurrentTimeStampState(snapshot.val())
       },
       (error) => {
@@ -141,19 +186,27 @@ export const FirebaseDataProvider = ({
     )
 
     onValue(
+      currentState,
+      (snapshot) => {
+        handleLogDataToSheet(snapshot.val())
+      },
+      (error) => {
+        console.error("Error reading currentState:", error)
+      },
+    )
+
+    onValue(
       currentLDRStateRef,
       (snapshot) => {
-        console.log("currentLDRState", snapshot.val())
-        console.log("currentTimeStampState", currentTimeStampState)
-        debounceNotification(() => {
-          if (snapshot.val() >= 1500) {
-            startDiscordBot(
-              "ldr",
-              snapshot.val(),
-              new Date(currentTimeStampState),
-            )
-          }
-        }, 3000)
+        // debounceNotification(() => {
+        //   if (snapshot.val() >= 1500) {
+        //     startDiscordBot(
+        //       "ldr",
+        //       snapshot.val(),
+        //       new Date(currentTimeStampState),
+        //     )
+        //   }
+        // }, 3000)
         setCurrentLDRState(snapshot.val())
       },
       (error) => {
@@ -164,15 +217,15 @@ export const FirebaseDataProvider = ({
     onValue(
       currentDistStateRef,
       (snapshot) => {
-        debounceNotification(() => {
-          if (snapshot.val() < 100) {
-            startDiscordBot(
-              "dist",
-              snapshot.val(),
-              new Date(currentTimeStampState),
-            )
-          }
-        }, 3000)
+        // debounceNotification(() => {
+        //   if (snapshot.val() < 100) {
+        //     startDiscordBot(
+        //       "dist",
+        //       snapshot.val(),
+        //       new Date(currentTimeStampState),
+        //     )
+        //   }
+        // }, 3000)
         setCurrentDistState(snapshot.val())
       },
       (error) => {
@@ -181,8 +234,16 @@ export const FirebaseDataProvider = ({
     )
 
     onValue(
+      currentLoudnessStateRef,
+      (snapshot) => setCurrentLoudnessState(snapshot.val()),
+      (error) => {
+        console.error("Error reading currentLoudnessState:", error)
+      },
+    )
+
+    onValue(
       currentMotionStateRef,
-      (snapshot) => setCurrentMotionState(snapshot.val()),
+      (snapshot) => setCurrentMotionState(snapshot.val() ? 1 : 0),
       (error) => {
         console.error("Error reading currentMotionState:", error)
       },
@@ -209,7 +270,14 @@ export const FirebaseDataProvider = ({
 
     onValue(
       logStateRef,
-      (snapshot) => setLogState(snapshot.val()),
+      (snapshot) => {
+        setLogState(snapshot.val())
+
+        // snapshot.forEach((childSnapshot) => {
+        //   const childData = childSnapshot.val()
+        //   handleLogDataToSheet(childData)
+        // })
+      },
       (error) => {
         console.error("Error reading logState:", error)
       },
@@ -244,9 +312,13 @@ export const FirebaseDataProvider = ({
     onValue(
       paymentsRef,
       (snapshot) => {
-        setPayments(snapshot.val())
+        const paymentsData = snapshot.val()
+        setPayments(paymentsData)
         schedule.gracefulShutdown()
-        schedulePaymentTasks(Object.values(snapshot.val()))
+        Object.keys(paymentsData).forEach((paymentKey) => {
+          console.log(paymentsData[paymentKey])
+          schedulePaymentTasks(paymentsData[paymentKey], paymentKey)
+        })
       },
       (error) => {
         console.error("Error reading payments:", error)
@@ -280,6 +352,7 @@ export const FirebaseDataProvider = ({
         currentMotionState,
         currentSmokeState,
         currentTimeStampState,
+        currentLoudnessState,
       }}
     >
       {children}
