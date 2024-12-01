@@ -57,9 +57,12 @@ export function AddDataForm() {
   const { toast } = useToast()
 
   const onSubmit = async (data: FormData) => {
-    setIsSubmitting(true)
-
     try {
+      if (!data.description || !data.description.trim())
+        throw new Error("Description is required")
+
+      setIsSubmitting(true)
+
       await push(ref(database, "payments"), {
         ...data,
         date: data.date.toISOString(),

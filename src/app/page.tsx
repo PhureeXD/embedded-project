@@ -9,9 +9,7 @@ import Dashboard from "@/components/Dashboard"
 export default function Home() {
   return (
     <main className="container px-4 py-8 mx-auto">
-      <h1 className="mb-8 text-4xl font-bold text-center">
-        Advanced System Monitor
-      </h1>
+      <h1 className="mb-8 text-4xl font-bold text-center">Smart Box Monitor</h1>
       <section>
         <article className="md:w-[60dvw] mx-auto mt-8">
           <Suspense fallback={<Skeleton className="h-40" />}>

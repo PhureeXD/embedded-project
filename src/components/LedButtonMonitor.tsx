@@ -43,8 +43,12 @@ export default function LedButtonMonitor() {
     <>
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl font-bold">System Monitor</CardTitle>
-          <CardDescription>Real-time LED and Button status</CardDescription>
+          <CardTitle className="text-2xl font-bold text-center">
+            System Monitor
+          </CardTitle>
+          <CardDescription className="text-center">
+            Real-time & Useful Innovation
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-col items-center space-y-4">
@@ -55,7 +59,7 @@ export default function LedButtonMonitor() {
                 <LightBulb isOn={currentLedState?.ledStatus} />
               </Canvas>
             </div>
-            <div className="flex items-center justify-between w-full p-4 border-2 rounded-lg">
+            {/* <div className="flex items-center justify-between w-full p-4 border-2 rounded-lg">
               <div className="flex items-center space-x-2">
                 <Laptop className="w-6 h-6" />
                 <span className="text-lg font-medium">Light Bulb Status</span>
@@ -78,7 +82,7 @@ export default function LedButtonMonitor() {
               className="text-xs font-semibold"
             >
               {buttonState ? "PRESSED" : "RELEASED"}
-            </Badge>
+            </Badge>*/}
           </div>
         </CardContent>
         <CardFooter>
