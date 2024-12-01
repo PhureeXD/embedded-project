@@ -23,7 +23,8 @@ export default function LedButtonMonitor() {
 
   const toggleLedState = async () => {
     const newLedState = !currentLedState?.ledStatus
-    const date = new Date().toISOString()
+    const dateBase = new Date()
+    const date = dateBase.toISOString()
 
     await set(ref(database, "currentLedState"), {
       ledStatus: newLedState,
@@ -35,7 +36,7 @@ export default function LedButtonMonitor() {
       date: date,
     })
 
-    startDiscordBot(newLedState)
+    startDiscordBot("ledStatus", newLedState ? 1 : 0, dateBase)
   }
 
   return (

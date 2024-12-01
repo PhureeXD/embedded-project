@@ -13,7 +13,6 @@ export async function startDiscordBot(
   field: string,
   value: number | string,
   date: Date,
-  ledStatus?: boolean,
 ) {
   if (!discordClient) {
     discordClient = new Client({
@@ -38,12 +37,12 @@ export async function startDiscordBot(
   switch (field) {
     case "ledStatus":
       embed
-        .setColor(ledStatus ? 0x00ff00 : 0xff0000)
+        .setColor(value ? 0x00ff00 : 0xff0000)
         .setTitle("LED Status Update")
         .setDescription(`The LED status has been updated.`)
         .addFields({
           name: "New Status",
-          value: ledStatus ? "✅ On" : "❌ Off",
+          value: value ? "✅ On" : "❌ Off",
         })
         .setTimestamp(date)
       break
