@@ -20,6 +20,8 @@ import {
   smkOptions,
   motionOptions,
 } from "@/constant/options"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 ChartJS.register(
   CategoryScale,
@@ -31,21 +33,6 @@ ChartJS.register(
   Legend,
   Filler,
 )
-
-// Mock data
-// const generateMockData = () => {
-//   const data = []
-//   const now = new Date()
-//   for (let i = 0; i < 24; i++) {
-//     data.push({
-//       datetime: new Date(now.getTime() - i * 60 * 60 * 1000).toISOString(),
-//       ledLightValue: Math.floor(Math.random() * 100),
-//     })
-//   }
-//   return data.reverse()
-// }
-
-// const mockData = generateMockData()
 
 const LineChart = () => {
   const { ledState, logState } = useFirebaseData()
@@ -89,7 +76,7 @@ const LineChart = () => {
         label: "Distance",
         data: distData,
         borderColor: "#42b883",
-        backgroundColor: "#e0ffcd",
+        backgroundColor: "rgba(66, 184, 131, 0.2)",
         fill: "origin",
       },
     ],
@@ -102,7 +89,7 @@ const LineChart = () => {
         label: "LDR",
         data: ldrData,
         borderColor: "#ffc93c",
-        backgroundColor: "#fdffcd",
+        backgroundColor: "rgba(255, 201, 60, 0.2)",
         fill: "origin",
       },
     ],
@@ -115,7 +102,7 @@ const LineChart = () => {
         label: "Motion",
         data: motionData,
         borderColor: "#f38181",
-        backgroundColor: "#ffebeb",
+        backgroundColor: "rgba(243, 129, 129, 0.2)",
         fill: "origin",
       },
     ],
@@ -128,20 +115,107 @@ const LineChart = () => {
         label: "Smoke",
         data: smkData,
         borderColor: "#5f6769",
-        backgroundColor: "#ececec",
+        backgroundColor: "rgba(95, 103, 105, 0.2)",
         fill: "origin",
       },
     ],
   }
 
+  const allDataset = {
+    labels: dateDate,
+    datasets: [
+      {
+        label: "LED Light Value",
+        data: ledData.map((d) => d.ledStatus),
+        borderColor: "rgb(75, 192, 192)",
+        backgroundColor: "rgba(75, 192, 192, 0.2)",
+        fill: false,
+      },
+      {
+        label: "Distance",
+        data: distData,
+        borderColor: "#42b883",
+        backgroundColor: "rgba(66, 184, 131, 0.2)",
+        fill: false,
+      },
+      {
+        label: "LDR",
+        data: ldrData,
+        borderColor: "#ffc93c",
+        backgroundColor: "rgba(255, 201, 60, 0.2)",
+        fill: false,
+      },
+      {
+        label: "Motion",
+        data: motionData,
+        borderColor: "#f38181",
+        backgroundColor: "rgba(243, 129, 129, 0.2)",
+        fill: false,
+      },
+      {
+        label: "Smoke",
+        data: smkData,
+        borderColor: "#5f6769",
+        backgroundColor: "rgba(95, 103, 105, 0.2)",
+        fill: false,
+      },
+    ],
+  }
+
+  const allOptions = {
+    ...options,
+    scales: {
+      ...(options.scales ?? {}),
+      y: {
+        ...(options.scales?.y ?? {}),
+        title: {
+          ...(options.scales?.y?.title ?? {}),
+          text: "Value",
+        },
+      },
+    },
+  }
+
   return (
-    <div className="w-full mx-auto space-y-5">
-      <Line options={options} data={ledDataset} />
-      <Line options={distOptions} data={distDataset} />
-      <Line options={ldrOptions} data={ldrDataset} />
-      <Line options={motionOptions} data={motionDataset} />
-      <Line options={smkOptions} data={smkDataset} />
-    </div>
+    <Card className="w-full mx-auto">
+      <CardHeader>
+        <CardTitle className="text-2xl font-bold text-center">
+          Sensor Data Charts
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Tabs defaultValue="all" className="w-full">
+          <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6 mb-4">
+            <TabsTrigger value="all">All</TabsTrigger>
+            <TabsTrigger value="led">LED Light</TabsTrigger>
+            <TabsTrigger value="distance">Distance</TabsTrigger>
+            <TabsTrigger value="ldr">LDR</TabsTrigger>
+            <TabsTrigger value="motion">Motion</TabsTrigger>
+            <TabsTrigger value="smoke">Smoke</TabsTrigger>
+          </TabsList>
+          <div className="p-4 bg-secondary rounded-lg">
+            <TabsContent value="all">
+              <Line options={allOptions} data={allDataset} />
+            </TabsContent>
+            <TabsContent value="led">
+              <Line options={options} data={ledDataset} />
+            </TabsContent>
+            <TabsContent value="distance">
+              <Line options={distOptions} data={distDataset} />
+            </TabsContent>
+            <TabsContent value="ldr">
+              <Line options={ldrOptions} data={ldrDataset} />
+            </TabsContent>
+            <TabsContent value="motion">
+              <Line options={motionOptions} data={motionDataset} />
+            </TabsContent>
+            <TabsContent value="smoke">
+              <Line options={smkOptions} data={smkDataset} />
+            </TabsContent>
+          </div>
+        </Tabs>
+      </CardContent>
+    </Card>
   )
 }
 

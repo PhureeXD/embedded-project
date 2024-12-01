@@ -4,11 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useFirebaseData } from "@/context/FirebaseProvider"
 import {
   ArrowRight,
-  Droplet,
   Lightbulb,
   AlarmSmokeIcon as Smoke,
   Wind,
 } from "lucide-react"
+import { GeminiAnalysis } from "./GeminiAnalysis"
 
 const Dashboard = () => {
   const {
@@ -44,7 +44,7 @@ const Dashboard = () => {
     },
     {
       title: "Motion",
-      value: currentMotionState ?? "N/A",
+      value: currentMotionState ? "Detected" : "Not Detected",
       icon: Wind,
       color: "text-green-500",
     },
@@ -52,15 +52,15 @@ const Dashboard = () => {
 
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-3xl font-bold mb-6">Sensor Dashboard</h1>
+      <h1 className="text-3xl font-bold mb-6 text-center">Sensor Dashboard</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {cards.map((card, index) => (
           <Card key={index} className="shadow-lg">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
+              <CardTitle className="text-md font-medium">
                 {card.title}
               </CardTitle>
-              <card.icon className={`h-4 w-4 ${card.color}`} />
+              <card.icon className={`h-8 w-8 ${card.color}`} />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{card.value}</div>
@@ -72,6 +72,7 @@ const Dashboard = () => {
           </Card>
         ))}
       </div>
+      <GeminiAnalysis />
     </div>
   )
 }

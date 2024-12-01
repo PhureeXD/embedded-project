@@ -1,10 +1,15 @@
 "use client"
 
 import { useState } from "react"
-import { useForm, Controller } from "react-hook-form"
+import { useForm } from "react-hook-form"
 import { database, ref, push } from "@/firebase/config"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 import {
   Form,
   FormControl,
@@ -32,7 +37,7 @@ import {
   CardFooter,
 } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ToastAction } from "./ui/toast"
+import { ToastAction } from "@/components/ui/toast"
 
 type FormData = {
   description: string
@@ -45,6 +50,7 @@ export function AddDataForm() {
     defaultValues: {
       status: "processing",
       description: "",
+      date: new Date(),
     },
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -61,19 +67,21 @@ export function AddDataForm() {
 
       toast({
         title: "Success",
-        description: "Data added successfully.",
+        description: "Task added successfully.",
         duration: 3000,
       })
 
       form.reset({
         status: "processing",
+        description: "",
+        date: new Date(),
       })
     } catch (error) {
       console.error("Error adding document: ", error)
 
       toast({
         title: "Error",
-        description: "There was a problem adding the data.",
+        description: "There was a problem adding the task.",
         variant: "destructive",
         duration: 5000,
         action: <ToastAction altText="Try again">Try again</ToastAction>,
@@ -84,137 +92,137 @@ export function AddDataForm() {
   }
 
   return (
-    <Card className="w-full max-w-2xl mx-auto shadow-lg">
-      <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl font-bold text-center">
-          Add New Task!
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Enter task description"
-                      {...field}
-                      className="w-full"
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    Provide a brief description for the task.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="status"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Status</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select task status" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="processing">
-                        <Badge
-                          variant="outline"
-                          className="text-blue-800 bg-blue-100"
-                        >
-                          Processing
-                        </Badge>
-                      </SelectItem>
-                      <SelectItem value="success">
-                        <Badge
-                          variant="outline"
-                          className="text-green-800 bg-green-100"
-                        >
-                          Success
-                        </Badge>
-                      </SelectItem>
-                      <SelectItem value="failed">
-                        <Badge
-                          variant="outline"
-                          className="text-red-800 bg-red-100"
-                        >
-                          Failed
-                        </Badge>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>
-                    Select the current status of the task.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="date"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Date and Time</FormLabel>
-                  <FormControl>
-                    <div>
-                      <Controller
-                        name="date"
-                        control={form.control}
-                        render={({ field }) => (
-                          <DateTimePicker
-                            date={field.value || new Date()}
-                            setDate={(date) => {
-                              if (!date) return
-                              field.onChange(date)
-                            }}
-                          />
-                        )}
-                      />
-                    </div>
-                  </FormControl>
-                  <FormDescription>
-                    Select the date and time of the task.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </form>
-        </Form>
-      </CardContent>
-      <CardFooter>
-        <Button
-          type="submit"
-          onClick={form.handleSubmit(onSubmit)}
-          disabled={isSubmitting}
-          className="w-full"
-        >
-          {isSubmitting ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Submitting...
-            </>
-          ) : (
-            <>
-              <Send className="w-4 h-4 mr-2" />
-              Submit Task
-            </>
-          )}
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="outline" className="w-full">
+          Add New Task
         </Button>
-      </CardFooter>
-    </Card>
+      </PopoverTrigger>
+      <PopoverContent className="w-[350px] p-0">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-xl font-semibold">
+              Add New Task
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Form {...form}>
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-4"
+              >
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Enter task description"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Provide a brief description for the task.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Status</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select task status" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="processing">
+                            <Badge
+                              variant="secondary"
+                              className="bg-blue-100 text-blue-800"
+                            >
+                              Processing
+                            </Badge>
+                          </SelectItem>
+                          <SelectItem value="success">
+                            <Badge
+                              variant="secondary"
+                              className="bg-green-100 text-green-800"
+                            >
+                              Success
+                            </Badge>
+                          </SelectItem>
+                          <SelectItem value="failed">
+                            <Badge
+                              variant="secondary"
+                              className="bg-red-100 text-red-800"
+                            >
+                              Failed
+                            </Badge>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        Select the current status of the task.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="date"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Date and Time</FormLabel>
+                      <FormControl>
+                        <DateTimePicker
+                          date={field.value}
+                          setDate={(date) => field.onChange(date)}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Select the date and time of the task.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </form>
+            </Form>
+          </CardContent>
+          <CardFooter>
+            <Button
+              type="submit"
+              onClick={form.handleSubmit(onSubmit)}
+              disabled={isSubmitting}
+              className="w-full"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Submitting...
+                </>
+              ) : (
+                <>
+                  <Send className="w-4 h-4 mr-2" />
+                  Submit Task
+                </>
+              )}
+            </Button>
+          </CardFooter>
+        </Card>
+      </PopoverContent>
+    </Popover>
   )
 }
