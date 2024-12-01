@@ -95,7 +95,7 @@ export const FirebaseDataProvider = ({
 
     payments.forEach((payment) => {
       const paymentDate = moment(payment.date)
-      console.log(paymentDate.isAfter(moment()))
+      // console.log(paymentDate.isAfter(moment()))
       if (paymentDate.isAfter(moment())) {
         schedule.scheduleJob(paymentDate.toDate(), () =>
           startDiscordBot(
