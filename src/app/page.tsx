@@ -19,18 +19,6 @@ export default function Home() {
           </Suspense>
         </article>
 
-        <article className="md:w-[60dvw] mx-auto mt-8">
-          <Suspense fallback={<Skeleton className="h-40" />}>
-            <AddDataForm />
-          </Suspense>
-        </article>
-
-        <article className="md:w-[60dvw] mx-auto mt-8">
-          <Suspense fallback={<Skeleton className="h-60" />}>
-            <DataTableDemo />
-          </Suspense>
-        </article>
-
         <article className="max-w-[90dvw] mx-auto mt-8">
           <Suspense fallback={<Skeleton className="h-80" />}>
             <Dashboard />
@@ -40,6 +28,18 @@ export default function Home() {
         <article className="max-w-[90dvw] mx-auto mt-8">
           <Suspense fallback={<Skeleton className="h-80" />}>
             <LineChart />
+          </Suspense>
+        </article>
+
+        <article className="md:w-[60dvw] mx-auto mt-8">
+          <Suspense fallback={<Skeleton className="h-40" />}>
+            <AddDataForm />
+          </Suspense>
+        </article>
+
+        <article className="md:w-[60dvw] mx-auto mt-8">
+          <Suspense fallback={<Skeleton className="h-60" />}>
+            <DataTableDemo />
           </Suspense>
         </article>
       </section>

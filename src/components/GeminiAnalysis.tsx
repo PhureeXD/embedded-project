@@ -85,9 +85,9 @@ export function GeminiAnalysis() {
   return (
     <Card className="mt-6">
       <CardHeader>
-        <CardTitle>Gemini Sensor Analysis</CardTitle>
+        <CardTitle className="text-center">Gemini Sensor Analysis</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="text-center">
         <Button onClick={analyzeSensorData} disabled={isLoading}>
           {isLoading ? (
             <>

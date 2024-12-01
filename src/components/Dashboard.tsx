@@ -9,6 +9,8 @@ import {
   Wind,
 } from "lucide-react"
 import { GeminiAnalysis } from "./GeminiAnalysis"
+import { useEffect, useState } from "react"
+import { formatValue } from "@/lib/utils"
 
 const Dashboard = () => {
   const {
@@ -19,26 +21,30 @@ const Dashboard = () => {
     currentTimeStampState,
   } = useFirebaseData()
 
-  const formatValue = (value: number | null | undefined, unit: string) => {
-    return value !== null && value !== undefined ? `${value} ${unit}` : "N/A"
-  }
+  const [clientTimeStamp, setClientTimeStamp] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (currentTimeStampState) {
+      setClientTimeStamp(new Date(currentTimeStampState).toLocaleString())
+    }
+  }, [currentTimeStampState])
 
   const cards = [
     {
       title: "Distance",
-      value: formatValue(currentDistState, "cm"),
+      value: formatValue(currentDistState),
       icon: ArrowRight,
       color: "text-blue-500",
     },
     {
       title: "LDR",
-      value: formatValue(currentLDRState, "lux"),
+      value: formatValue(currentLDRState),
       icon: Lightbulb,
       color: "text-yellow-500",
     },
     {
       title: "Smoke",
-      value: formatValue(currentSmokeState, "ppm"),
+      value: formatValue(currentSmokeState),
       icon: Smoke,
       color: "text-red-500",
     },
@@ -65,8 +71,8 @@ const Dashboard = () => {
             <CardContent>
               <div className="text-2xl font-bold">{card.value}</div>
               <p className="text-xs text-muted-foreground">
-                Last updated:{" "}
-                {new Date(currentTimeStampState ?? 0).toLocaleString()}
+                Last updated:
+                {clientTimeStamp && clientTimeStamp.toLocaleString()}
               </p>
             </CardContent>
           </Card>

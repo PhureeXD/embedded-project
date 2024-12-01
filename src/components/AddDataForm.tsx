@@ -94,14 +94,14 @@ export function AddDataForm() {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="outline" className="w-full">
-          Add New Task
+        <Button className="w-full bg-slate-700 text-destructive-foreground shadow-sm hover:bg-slate-700/80">
+          Add New Task +
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[350px] p-0">
         <Card>
           <CardHeader>
-            <CardTitle className="text-xl font-semibold">
+            <CardTitle className="text-xl font-semibold text-center">
               Add New Task
             </CardTitle>
           </CardHeader>

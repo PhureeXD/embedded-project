@@ -56,10 +56,20 @@ const defaultValue: FirebaseDataContextType = {
   currentDistState: 0,
   currentMotionState: 0,
   currentSmokeState: 0,
-  currentTimeStampState: 0,
+  currentTimeStampState: Date.now(),
 }
 
 const FirebaseDataContext = createContext<FirebaseDataContextType>(defaultValue)
+
+let lastNotificationTime = 0
+
+const debounceNotification = (callback: () => void, delay: number) => {
+  const currentTime = Date.now()
+  if (currentTime - lastNotificationTime > delay) {
+    callback()
+    lastNotificationTime = currentTime
+  }
+}
 
 export const FirebaseDataProvider = ({
   children,
@@ -95,7 +105,6 @@ export const FirebaseDataProvider = ({
 
     payments.forEach((payment) => {
       const paymentDate = moment(payment.date)
-      // console.log(paymentDate.isAfter(moment()))
       if (paymentDate.isAfter(moment())) {
         schedule.scheduleJob(paymentDate.toDate(), () =>
           startDiscordBot(
@@ -104,14 +113,12 @@ export const FirebaseDataProvider = ({
             paymentDate.toDate(),
           ),
         )
-        // console.log(
-        //   `Scheduled task for payment desc: ${payment.description} on ${paymentDate.format()}`,
-        // )
       }
     })
   }
 
   useEffect(() => {
+    const currentTimeStampStateRef = ref(database, "currentState/timestamp")
     const ledStateRef = ref(database, "ledStateLog")
     const buttonStateRef = ref(database, "buttonStatus")
     const paymentsRef = ref(database, "payments")
@@ -121,11 +128,11 @@ export const FirebaseDataProvider = ({
     const currentDistStateRef = ref(database, "currentState/dist")
     const currentMotionStateRef = ref(database, "currentState/motion")
     const currentSmokeStateRef = ref(database, "currentState/smk")
-    const currentTimeStampStateRef = ref(database, "currentState/timestamp")
 
     onValue(
       currentTimeStampStateRef,
       (snapshot) => {
+        console.log("currentTimeStampState", snapshot.val())
         setCurrentTimeStampState(snapshot.val())
       },
       (error) => {
@@ -136,13 +143,17 @@ export const FirebaseDataProvider = ({
     onValue(
       currentLDRStateRef,
       (snapshot) => {
-        if (snapshot.val() >= 1500) {
-          startDiscordBot(
-            "ldr",
-            snapshot.val(),
-            new Date(currentTimeStampState),
-          )
-        }
+        console.log("currentLDRState", snapshot.val())
+        console.log("currentTimeStampState", currentTimeStampState)
+        debounceNotification(() => {
+          if (snapshot.val() >= 1500) {
+            startDiscordBot(
+              "ldr",
+              snapshot.val(),
+              new Date(currentTimeStampState),
+            )
+          }
+        }, 3000)
         setCurrentLDRState(snapshot.val())
       },
       (error) => {
@@ -153,13 +164,15 @@ export const FirebaseDataProvider = ({
     onValue(
       currentDistStateRef,
       (snapshot) => {
-        if (snapshot.val() < 100) {
-          // startDiscordBot(
-          //   "dist",
-          //   snapshot.val(),
-          //   new Date(currentTimeStampState),
-          // )
-        }
+        debounceNotification(() => {
+          if (snapshot.val() < 100) {
+            startDiscordBot(
+              "dist",
+              snapshot.val(),
+              new Date(currentTimeStampState),
+            )
+          }
+        }, 3000)
         setCurrentDistState(snapshot.val())
       },
       (error) => {
@@ -178,13 +191,15 @@ export const FirebaseDataProvider = ({
     onValue(
       currentSmokeStateRef,
       (snapshot) => {
-        if (snapshot.val() >= 500) {
-          startDiscordBot(
-            "smoke",
-            snapshot.val(),
-            new Date(currentTimeStampState),
-          )
-        }
+        debounceNotification(() => {
+          if (snapshot.val() >= 500) {
+            startDiscordBot(
+              "smoke",
+              snapshot.val(),
+              new Date(currentTimeStampState),
+            )
+          }
+        }, 3000)
         setCurrentSmokeState(snapshot.val())
       },
       (error) => {
@@ -229,7 +244,6 @@ export const FirebaseDataProvider = ({
     onValue(
       paymentsRef,
       (snapshot) => {
-        // console.log("payments", snapshot.val())
         setPayments(snapshot.val())
         schedule.gracefulShutdown()
         schedulePaymentTasks(Object.values(snapshot.val()))
