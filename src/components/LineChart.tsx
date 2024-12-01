@@ -135,7 +135,7 @@ const LineChart = () => {
   }
 
   return (
-    <div className="w-full mx-auto">
+    <div className="w-full mx-auto space-y-5">
       <Line options={options} data={ledDataset} />
       <Line options={distOptions} data={distDataset} />
       <Line options={ldrOptions} data={ldrDataset} />
