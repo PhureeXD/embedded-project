@@ -265,7 +265,7 @@ export const FirebaseDataProvider = ({
       currentSmokeStateRef,
       (snapshot) => {
         debounceNotification(() => {
-          if (snapshot.val() >= 500) {
+          if (snapshot.val() >= 1000) {
             startDiscordBot(
               "smoke",
               snapshot.val(),
