@@ -243,7 +243,19 @@ export const FirebaseDataProvider = ({
 
     onValue(
       currentMotionStateRef,
-      (snapshot) => setCurrentMotionState(snapshot.val() ? 1 : 0),
+      (snapshot) => {
+        debounceNotification(() => {
+          if (snapshot.val()) {
+            startDiscordBot(
+              "motion",
+              snapshot.val(),
+              new Date(currentTimeStampState),
+            )
+          }
+        }, 3000)
+
+        setCurrentMotionState(snapshot.val() ? 1 : 0)
+      },
       (error) => {
         console.error("Error reading currentMotionState:", error)
       },
@@ -261,6 +273,7 @@ export const FirebaseDataProvider = ({
             )
           }
         }, 3000)
+
         setCurrentSmokeState(snapshot.val())
       },
       (error) => {
