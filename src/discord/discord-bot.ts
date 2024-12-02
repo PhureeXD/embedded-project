@@ -54,7 +54,7 @@ export async function startDiscordBot(
     //     .setTimestamp(date)
     //   break
     case "dist":
-      if (+value > 100) return
+      return
       embed
         .setColor(0x00ff00)
         .setTitle("Distance Value Update")
