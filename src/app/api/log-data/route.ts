@@ -1,7 +1,7 @@
 import moment from "moment-timezone"
 import { NextResponse } from "next/server"
 
-const GOOGLE_SCRIPT_URL = process.env.GOOGLE_SCRIPT_URL!
+const GOOGLE_SCRIPT_URL = process.env.PUBLIC_GOOGLE_SCRIPT_URL!
 
 export async function POST(request: Request) {
   try {
