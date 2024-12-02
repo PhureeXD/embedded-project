@@ -2,7 +2,14 @@
 import { startDiscordBot } from "@/discord/discord-bot"
 import { database, update } from "@/firebase/config"
 import { ref, onValue, off } from "@/firebase/config"
-import { createContext, useContext, useEffect, useState } from "react"
+import {
+  createContext,
+  MutableRefObject,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react"
 import schedule from "node-schedule"
 import moment from "moment-timezone"
 
@@ -42,7 +49,7 @@ interface FirebaseDataContextType {
   currentLoudnessState: number
   currentMotionState: number
   currentSmokeState: number
-  currentTimeStampState: number
+  currentTimeStampState: MutableRefObject<number>
 }
 
 const defaultValue: FirebaseDataContextType = {
@@ -59,7 +66,7 @@ const defaultValue: FirebaseDataContextType = {
   currentLoudnessState: 0,
   currentMotionState: 0,
   currentSmokeState: 0,
-  currentTimeStampState: Date.now(),
+  currentTimeStampState: { current: Date.now() },
 }
 
 let lastNotificationTime = 0
@@ -112,6 +119,7 @@ export const FirebaseDataProvider = ({
 }: {
   children: React.ReactNode
 }) => {
+  const currentTimeStampState = useRef<number>(0)
   const [ledState, setLedState] = useState<LedState[]>([])
   const [buttonState, setButtonState] = useState(false)
   const [payments, setPayments] = useState<Payment[]>([])
@@ -136,9 +144,6 @@ export const FirebaseDataProvider = ({
   )
   const [currentSmokeState, setCurrentSmokeState] = useState<number>(
     defaultValue.currentSmokeState,
-  )
-  const [currentTimeStampState, setCurrentTimeStampState] = useState<number>(
-    defaultValue.currentTimeStampState,
   )
 
   function schedulePaymentTasks(payment: Payment, paymentKey: string) {
@@ -178,7 +183,7 @@ export const FirebaseDataProvider = ({
     onValue(
       currentTimeStampStateRef,
       (snapshot) => {
-        setCurrentTimeStampState(snapshot.val())
+        currentTimeStampState.current = snapshot.val()
       },
       (error) => {
         console.error("Error reading currentTimeStampState:", error)
@@ -189,136 +194,136 @@ export const FirebaseDataProvider = ({
       currentState,
       (snapshot) => {
         handleLogDataToSheet(snapshot.val())
+
+        onValue(
+          currentLDRStateRef,
+          (snapshot) => {
+            // debounceNotification(() => {
+            //   if (snapshot.val() >= 1500) {
+            //     startDiscordBot(
+            //       "ldr",
+            //       snapshot.val(),
+            //       new Date(currentTimeStampState),
+            //     )
+            //   }
+            // }, 3000)
+            setCurrentLDRState(snapshot.val())
+          },
+          (error) => {
+            console.error("Error reading currentLDRState:", error)
+          },
+        )
+
+        onValue(
+          currentDistStateRef,
+          (snapshot) => {
+            // debounceNotification(() => {
+            //   if (snapshot.val() < 100) {
+            //     startDiscordBot(
+            //       "dist",
+            //       snapshot.val(),
+            //       new Date(currentTimeStampState),
+            //     )
+            //   }
+            // }, 3000)
+            setCurrentDistState(snapshot.val())
+          },
+          (error) => {
+            console.error("Error reading currentDistState:", error)
+          },
+        )
+
+        onValue(
+          currentLoudnessStateRef,
+          (snapshot) => setCurrentLoudnessState(snapshot.val()),
+          (error) => {
+            console.error("Error reading currentLoudnessState:", error)
+          },
+        )
+
+        onValue(
+          currentMotionStateRef,
+          (snapshot) => {
+            debounceNotification(() => {
+              if (snapshot.val()) {
+                startDiscordBot(
+                  "motion",
+                  snapshot.val() ? 1 : 0,
+                  currentTimeStampState.current,
+                )
+              }
+            }, 3000)
+
+            setCurrentMotionState(snapshot.val() ? 1 : 0)
+          },
+          (error) => {
+            console.error("Error reading currentMotionState:", error)
+          },
+        )
+
+        onValue(
+          currentSmokeStateRef,
+          (snapshot) => {
+            debounceNotification(() => {
+              if (snapshot.val() >= 1000) {
+                startDiscordBot(
+                  "smoke",
+                  snapshot.val(),
+                  new Date(currentTimeStampState.current),
+                )
+              }
+            }, 3000)
+
+            setCurrentSmokeState(snapshot.val())
+          },
+          (error) => {
+            console.error("Error reading currentSmokeState:", error)
+          },
+        )
+
+        onValue(
+          logStateRef,
+          (snapshot) => {
+            setLogState(snapshot.val())
+
+            // snapshot.forEach((childSnapshot) => {
+            //   const childData = childSnapshot.val()
+            //   handleLogDataToSheet(childData)
+            // })
+          },
+          (error) => {
+            console.error("Error reading logState:", error)
+          },
+        )
+
+        onValue(
+          currentLedStateRef,
+          (snapshot) => setCurrentLedState(snapshot.val()),
+          (error) => {
+            console.error("Error reading currentLedState:", error)
+          },
+        )
+
+        onValue(
+          ledStateRef,
+          (snapshot) => {
+            setLedState(snapshot.val())
+          },
+          (error) => {
+            console.error("Error reading ledStatus:", error)
+          },
+        )
+
+        onValue(
+          buttonStateRef,
+          (snapshot) => setButtonState(snapshot.val()),
+          (error) => {
+            console.error("Error reading buttonStatus:", error)
+          },
+        )
       },
       (error) => {
         console.error("Error reading currentState:", error)
-      },
-    )
-
-    onValue(
-      currentLDRStateRef,
-      (snapshot) => {
-        // debounceNotification(() => {
-        //   if (snapshot.val() >= 1500) {
-        //     startDiscordBot(
-        //       "ldr",
-        //       snapshot.val(),
-        //       new Date(currentTimeStampState),
-        //     )
-        //   }
-        // }, 3000)
-        setCurrentLDRState(snapshot.val())
-      },
-      (error) => {
-        console.error("Error reading currentLDRState:", error)
-      },
-    )
-
-    onValue(
-      currentDistStateRef,
-      (snapshot) => {
-        // debounceNotification(() => {
-        //   if (snapshot.val() < 100) {
-        //     startDiscordBot(
-        //       "dist",
-        //       snapshot.val(),
-        //       new Date(currentTimeStampState),
-        //     )
-        //   }
-        // }, 3000)
-        setCurrentDistState(snapshot.val())
-      },
-      (error) => {
-        console.error("Error reading currentDistState:", error)
-      },
-    )
-
-    onValue(
-      currentLoudnessStateRef,
-      (snapshot) => setCurrentLoudnessState(snapshot.val()),
-      (error) => {
-        console.error("Error reading currentLoudnessState:", error)
-      },
-    )
-
-    onValue(
-      currentMotionStateRef,
-      (snapshot) => {
-        debounceNotification(() => {
-          if (snapshot.val()) {
-            startDiscordBot(
-              "motion",
-              snapshot.val() ? 1 : 0,
-              new Date(currentTimeStampState),
-            )
-          }
-        }, 3000)
-
-        setCurrentMotionState(snapshot.val() ? 1 : 0)
-      },
-      (error) => {
-        console.error("Error reading currentMotionState:", error)
-      },
-    )
-
-    onValue(
-      currentSmokeStateRef,
-      (snapshot) => {
-        debounceNotification(() => {
-          if (snapshot.val() >= 1000) {
-            startDiscordBot(
-              "smoke",
-              snapshot.val(),
-              new Date(currentTimeStampState),
-            )
-          }
-        }, 3000)
-
-        setCurrentSmokeState(snapshot.val())
-      },
-      (error) => {
-        console.error("Error reading currentSmokeState:", error)
-      },
-    )
-
-    onValue(
-      logStateRef,
-      (snapshot) => {
-        setLogState(snapshot.val())
-
-        // snapshot.forEach((childSnapshot) => {
-        //   const childData = childSnapshot.val()
-        //   handleLogDataToSheet(childData)
-        // })
-      },
-      (error) => {
-        console.error("Error reading logState:", error)
-      },
-    )
-
-    onValue(
-      currentLedStateRef,
-      (snapshot) => setCurrentLedState(snapshot.val()),
-      (error) => {
-        console.error("Error reading currentLedState:", error)
-      },
-    )
-
-    onValue(
-      ledStateRef,
-      (snapshot) => {
-        setLedState(snapshot.val())
-      },
-      (error) => {
-        console.error("Error reading ledStatus:", error)
-      },
-    )
-
-    onValue(
-      buttonStateRef,
-      (snapshot) => setButtonState(snapshot.val()),
-      (error) => {
-        console.error("Error reading buttonStatus:", error)
       },
     )
 

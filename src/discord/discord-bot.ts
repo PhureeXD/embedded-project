@@ -12,7 +12,7 @@ let discordClient: Client | null = null
 export async function startDiscordBot(
   field: string,
   value: number | string,
-  date: Date,
+  date: Date | number,
 ) {
   if (!discordClient) {
     discordClient = new Client({
@@ -29,6 +29,7 @@ export async function startDiscordBot(
     process.env.NEXT_PUBLIC_DISCORD_CHANNEL_ID!,
   )
   const embed = new EmbedBuilder()
+
   switch (field) {
     // case "ledStatus":
     //   embed

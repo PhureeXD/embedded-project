@@ -28,7 +28,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (currentTimeStampState) {
-      setClientTimeStamp(moment(currentTimeStampState).format("LLL"))
+      setClientTimeStamp(moment(currentTimeStampState.current).format("LLL"))
     }
   }, [currentTimeStampState])
 
