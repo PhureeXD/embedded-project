@@ -30,29 +30,29 @@ export async function startDiscordBot(
   )
   const embed = new EmbedBuilder()
   switch (field) {
-    case "ledStatus":
-      embed
-        .setColor(value ? 0x00ff00 : 0xff0000)
-        .setTitle("LED Status Update")
-        .setDescription(`The LED status has been updated.`)
-        .addFields({
-          name: "New Status",
-          value: value ? "✅ On" : "❌ Off",
-        })
-        .setTimestamp(date)
-      break
-    case "ldr":
-      if (+value <= 1500 && +value > 400) return
-      embed
-        .setColor(+value <= 400 ? 0xff0000 : 0x00ff00)
-        .setTitle("LDR Value Update")
-        .setDescription(`The LDR value has been updated.`)
-        .addFields({
-          name: "New Value",
-          value: value.toString(),
-        })
-        .setTimestamp(date)
-      break
+    // case "ledStatus":
+    //   embed
+    //     .setColor(value ? 0x00ff00 : 0xff0000)
+    //     .setTitle("LED Status Update")
+    //     .setDescription(`The LED status has been updated.`)
+    //     .addFields({
+    //       name: "New Status",
+    //       value: value ? "✅ On" : "❌ Off",
+    //     })
+    //     .setTimestamp(date)
+    //   break
+    // case "ldr":
+    //   if (+value <= 1500 && +value > 400) return
+    //   embed
+    //     .setColor(+value <= 400 ? 0xff0000 : 0x00ff00)
+    //     .setTitle("LDR Value Update")
+    //     .setDescription(`The LDR value has been updated.`)
+    //     .addFields({
+    //       name: "New Value",
+    //       value: value.toString(),
+    //     })
+    //     .setTimestamp(date)
+    //   break
     case "dist":
       if (+value > 100) return
       embed
