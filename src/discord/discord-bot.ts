@@ -81,7 +81,7 @@ export async function startDiscordBot(
     case "motion":
       if (!value) return
       embed
-        .setColor(0xff0000)
+        .setColor(0x00ff00)
         .setTitle("Motion Value Update")
         .setDescription(`The motion value has been updated.`)
         .addFields({
