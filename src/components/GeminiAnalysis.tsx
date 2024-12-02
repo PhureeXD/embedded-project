@@ -26,7 +26,8 @@ export function GeminiAnalysis() {
   const [isApiInitialized, setIsApiInitialized] = useState<boolean>(false)
 
   useEffect(() => {
-    const storedApiKey = localStorage.getItem("geminiApiKey")
+    const storedApiKey =
+      localStorage.getItem("geminiApiKey") || process.env.GEMINI_API_KEY
     if (storedApiKey) {
       setApiKey(storedApiKey)
       initializeGeminiApi(storedApiKey)
