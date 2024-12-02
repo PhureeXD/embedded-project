@@ -77,6 +77,20 @@ export async function startDiscordBot(
         })
         .setTimestamp(date)
       break
+
+    case "motion":
+      if (!value) return
+      embed
+        .setColor(0xff0000)
+        .setTitle("Motion Value Update")
+        .setDescription(`The motion value has been updated.`)
+        .addFields({
+          name: "New Value",
+          value: value.toString(),
+        })
+        .setTimestamp(date)
+      break
+
     case "payments":
       embed
         .setColor(0x00f000)

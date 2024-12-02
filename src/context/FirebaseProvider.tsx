@@ -248,7 +248,7 @@ export const FirebaseDataProvider = ({
           if (snapshot.val()) {
             startDiscordBot(
               "motion",
-              snapshot.val(),
+              snapshot.val() ? 1 : 0,
               new Date(currentTimeStampState),
             )
           }
