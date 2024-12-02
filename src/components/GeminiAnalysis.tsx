@@ -48,7 +48,7 @@ export function GeminiAnalysis() {
         Loudness: ${currentLoudnessState}
         Motion: ${currentMotionState}
         Smoke: ${currentSmokeState} 
-        Timestamp: ${moment(currentTimeStampState).toLocaleString()}
+        Timestamp: ${moment(currentTimeStampState.current).toLocaleString()}
         (default value from sensors without knowing the units)
         Please provide a brief analysis of the current state of the environment based on these sensor readings. 
         you can use markdown text style too. Let the first line prompt the value of the sensor data.`
