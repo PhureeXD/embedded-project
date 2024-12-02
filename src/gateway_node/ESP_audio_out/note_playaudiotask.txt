@@ -1,0 +1,108 @@
+// Task to play audio from an MP3 file
+void play_task(void *param)
+{
+  // Initialize the audio output
+  Output *output = new I2SOutput(I2S_NUM_0, i2s_speaker_pins);
+  if (!output)
+  {
+    Serial.println("Failed to initialize output");
+    vTaskDelete(NULL);
+    return;
+  }
+  
+  // Mount the SPIFFS file system
+  SPIFFS spiffs("/fs");
+
+  while (true)
+  {
+    // Allocate memory for PCM buffers and input buffer
+    short *pcm1 = (short *)malloc(sizeof(short) * MINIMP3_MAX_SAMPLES_PER_FRAME * 2);
+    short *pcm2 = (short *)malloc(sizeof(short) * MINIMP3_MAX_SAMPLES_PER_FRAME * 2);
+    uint8_t *input_buf = (uint8_t *)malloc(BUFFER_SIZE);
+
+    // Check memory allocation
+    if (!pcm1 || !pcm2 || !input_buf)
+    {
+      Serial.println("Failed to allocate memory");
+      free(pcm1);
+      free(pcm2);
+      free(input_buf);
+      vTaskDelay(pdMS_TO_TICKS(1000));
+      continue;
+    }
+
+    // Open the MP3 file
+    FILE *fp = fopen("/fs/dist_near.mp3", "r");
+    if (!fp)
+    {
+      Serial.println("Failed to open MP3 file");
+      free(pcm1);
+      free(pcm2);
+      free(input_buf);
+      vTaskDelay(pdMS_TO_TICKS(1000));
+      continue;
+    }
+
+    // Initialize the MP3 decoder
+    mp3dec_t mp3d = {};
+    mp3dec_init(&mp3d);
+    mp3dec_frame_info_t info = {};
+
+    bool is_output_started = false;
+    int buffered = fread(input_buf, 1, BUFFER_SIZE, fp);
+    int current_pcm = 0; // 0: pcm1, 1: pcm2
+
+    // Process the MP3 frames
+    while (buffered > 0)
+    {
+      short *pcm = (current_pcm == 0) ? pcm1 : pcm2;
+      int samples = mp3dec_decode_frame(&mp3d, input_buf, buffered, pcm, &info);
+
+      // If samples are decoded, write them to the output
+      if (samples > 0)
+      {
+        if (!is_output_started)
+        {
+          output->start(info.hz);
+          is_output_started = true;
+        }
+
+        // Convert mono to stereo if needed
+        if (info.channels == 1)
+        {
+          for (int i = samples - 1; i >= 0; i--)
+          {
+            pcm[i * 2] = pcm[i];
+            pcm[i * 2 + 1] = pcm[i];
+          }
+        }
+
+        // Write samples to the audio output
+        output->write(pcm, samples);
+      }
+
+      buffered -= info.frame_bytes;
+      if (buffered > 0)
+      {
+        memmove(input_buf, input_buf + info.frame_bytes, buffered);
+      }
+
+      size_t n = fread(input_buf + buffered, 1, BUFFER_SIZE - buffered, fp);
+      buffered += n;
+
+      current_pcm = 1 - current_pcm; // Toggle PCM buffer
+    }
+
+    // Cleanup and close files, free memory
+    fclose(fp);
+    output->stop();
+    free(input_buf);
+    free(pcm1);
+    free(pcm2);
+
+    // Delay before the next loop iteration
+    vTaskDelay(pdMS_TO_TICKS(500));
+  }
+
+  vTaskDelete(NULL);
+}

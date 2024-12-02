@@ -1,0 +1,230 @@
+// Include required libraries
+#include <WiFi.h>
+#include <esp_now.h>
+#include <Arduino.h>
+#include <Firebase_ESP_Client.h>
+#include "addons/TokenHelper.h"
+#include "addons/RTDBHelper.h"
+
+// Firebase credentials
+#define API_KEY "AIzaSyAcn2NP3GnRnB6XGOVo6BovV1nY8ahvNOI"                                      // Replace with your project ID
+#define DATABASE_URL "https://embedded-cedt-default-rtdb.asia-southeast1.firebasedatabase.app" // Database Secret / Auth Token
+// WiFi credentials
+#define WIFI_SSID "vvv"
+#define WIFI_PASSWORD "12341234"
+
+
+// Define data structure
+typedef struct struct_message
+{
+  float LDR;
+  float dist;
+  float smk;
+  float motion;
+} struct_message;
+
+// Create structured data object
+struct_message myData;
+
+// Callback function
+void OnDataRecv(const uint8_t mac, const uint8_t *incomingData, int len)
+{
+  // Get incoming data
+  memcpy(&myData, incomingData, sizeof(myData));
+
+  // Print to Serial Monitor
+  Serial.print("LDR ");
+  Serial.print(": ");
+  Serial.println(myData.LDR);
+  Serial.print("dist ");
+  Serial.print(": ");
+  Serial.println(myData.dist);
+  Serial.print("Smoke ");
+  Serial.print(": ");
+  Serial.println(myData.smk);
+  Serial.print("Motion ");
+  Serial.print(": ");
+  Serial.println(myData.motion);
+}
+
+void setup()
+{
+  // Set up Serial Monitor
+  Serial.begin(9600);
+
+  // Start ESP32 in Station mode
+  WiFi.mode(WIFI_STA);
+
+  // Initalize ESP-NOW
+  if (esp_now_init() != 0)
+  {
+    Serial.println("Error initializing ESP-NOW");
+    return;
+  }
+
+  // Register callback function
+  esp_now_register_recv_cb((esp_now_recv_cb_t)OnDataRecv);
+}
+
+void loop()
+{
+}
+
+
+
+
+
+// // Pin assignments for LED and button
+// const int ledPin = 5;     // GPIO for LED
+// const int buttonPin = 15; // GPIO for button (choose any GPIO with an external button)
+
+// // Firebase objects
+// FirebaseData fbdo;
+// FirebaseAuth auth;
+// FirebaseConfig config;
+
+// typedef struct struct_message
+// {
+//   float ldr;
+//   float dist;
+//   float smk;
+//   float motion;
+// } struct_message;
+
+// struct_message myData;
+
+// // Callback function
+// void OnDataRecv(const uint8_t mac, const uint8_t *incomingData, int len)
+// {
+//   // Get incoming data
+//   memcpy(&myData, incomingData, sizeof(myData));
+
+//   // Print to Serial Monitor
+//   Serial.print("LDR ");
+//   Serial.print(": ");
+//   Serial.println(myData.ldr);
+//   Serial.print("dist ");
+//   Serial.print(": ");
+//   Serial.println(myData.dist);
+//   Serial.print("Smoke ");
+//   Serial.print(": ");
+//   Serial.println(myData.smk);
+//   Serial.print("Motion ");
+//   Serial.print(": ");
+//   Serial.println(myData.motion);
+// }
+
+// unsigned long sendDataPrevMillis = 0;
+// bool signupOK = false;
+// int ldrData = 0;
+// float voltage = 0.0;
+// bool buttonState = false;
+// bool ledStatus = false;
+
+// void setup()
+// {
+//   Serial.begin(9600);
+//   delay(5000);
+//   Serial.println("Starting...");
+//   pinMode(buttonPin, INPUT);
+//   pinMode(ledPin, OUTPUT);
+//   WiFi.mode(WIFI_STA);
+
+//   // Initalize ESP-NOW
+//   if (esp_now_init() != 0)
+//   {
+//     Serial.println("Error initializing ESP-NOW");
+//     return;
+//   }
+
+//   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+//   Serial.print("Connecting to Wi-Fi");
+//   while (WiFi.status() != WL_CONNECTED)
+//   {
+//     Serial.print(".");
+//     delay(500);
+//   }
+//   Serial.println("\nConnected to Wi-Fi");
+//   Serial.println(WiFi.localIP());
+
+//   // Configure Firebase
+//   config.api_key = API_KEY;
+//   config.database_url = DATABASE_URL;
+//   if (Firebase.signUp(&config, &auth, "", ""))
+//   {
+//     Serial.println("signUp OK");
+//     signupOK = true;
+//   }
+//   else
+//   {
+//     Serial.printf("%s\n", config.signer.signupError.message.c_str());
+//   }
+
+//   config.token_status_callback = tokenStatusCallback;
+//   Firebase.begin(&config, &auth);
+//   Firebase.reconnectWiFi(true);
+
+//   esp_now_register_recv_cb(esp_now_recv_cb_t(OnDataRecv));
+// }
+
+// void loop()
+// {
+//   if (Firebase.ready() && signupOK && (millis() - sendDataPrevMillis > 2000 || sendDataPrevMillis == 0))
+//   {
+//     sendDataPrevMillis = millis();
+//     String path = "/";
+
+//     if (Firebase.RTDB.setString(&fbdo, "Phuree", "Gay"))
+//     {
+//       Serial.println("Message written!");
+//     }
+//     else
+//     {
+//       Serial.println(fbdo.errorReason());
+//     }
+
+//     // Create a JSON object to hold the data
+//     String message = "Lolll";
+
+//     FirebaseJson json;
+//     json.set("message", message);
+//     // Add Firebase server timestamp
+//     json.set("timestamp/.sv", "timestamp");
+//     if (Firebase.RTDB.pushJSON(&fbdo, "/log", &json))
+//     {
+//       Serial.println(String(fbdo.pushName()));
+//     }
+//     else
+//     {
+//       Serial.println(fbdo.errorReason());
+//     }
+
+//     if (Firebase.RTDB.getJSON(&fbdo, path))
+//     {
+//       if (fbdo.dataType() == "json")
+//       {
+//         Serial.println("Data retrieved successfully!");
+
+//         // Parse JSON data
+//         FirebaseJson json = fbdo.to<FirebaseJson>();
+//         String jsonString;
+//         json.toString(jsonString, true);
+
+//         // Access specific nodes (e.g., currentLedState and ledStateLog)
+//         FirebaseJsonData ledStatus, timestamp;
+//         if (json.get(ledStatus, "/currentLedState/ledStatus") &&
+//             json.get(timestamp, "/currentLedState/date"))
+//         {
+//           Serial.println("Current LED State:");
+//           Serial.println(ledStatus.stringValue);
+//           Serial.println("Timestamp:");
+//           Serial.println(timestamp.stringValue);
+//         }
+//       }
+//       else
+//       {
+//         Serial.println(fbdo.errorReason());
+//       }
+//     }
+//   }
+// }

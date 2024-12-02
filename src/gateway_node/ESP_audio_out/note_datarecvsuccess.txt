@@ -1,0 +1,184 @@
+#include <WiFi.h>
+#include <esp_now.h>
+#include <Arduino.h>
+#include <Firebase_ESP_Client.h>
+#include "addons/TokenHelper.h"
+#include "addons/RTDBHelper.h"
+
+// Firebase credentials
+#define API_KEY "AIzaSyAcn2NP3GnRnB6XGOVo6BovV1nY8ahvNOI"                                      // Replace with your project ID
+#define DATABASE_URL "https://embedded-cedt-default-rtdb.asia-southeast1.firebasedatabase.app" // Database Secret / Auth Token
+// WiFi credentials
+// #define WIFI_SSID "vvv"
+// #define WIFI_PASSWORD "12341234"
+#define WIFI_SSID "Art"
+#define WIFI_PASSWORD "66666666"
+// Define data structure
+typedef struct struct_message
+{
+  float LDR;
+  float dist;
+  float smk;
+  float motion;
+} struct_message;
+
+// Create structured data object
+struct_message myData;
+
+// Firebase objects
+FirebaseData fbdo;
+FirebaseAuth auth;
+FirebaseConfig config;
+bool signupOK = false;
+
+// Task handles
+TaskHandle_t taskHandleReceive;
+
+// Callback function to handle received data
+void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
+{
+  Serial.println("OnDataRecv activated!");
+  // Copy incoming data into the structured object
+  memcpy(&myData, incomingData, sizeof(myData));
+
+  // Print the received data to Serial Monitor
+  Serial.print("LDR: ");
+  Serial.println(myData.LDR);
+  Serial.print("dist: ");
+  Serial.println(myData.dist);
+  Serial.print("Smoke: ");
+  Serial.println(myData.smk);
+  Serial.print("Motion: ");
+  Serial.println(myData.motion);
+}
+
+// Task to handle ESP-NOW reception
+void TaskReceiveData(void *pvParameters)
+{
+  Serial.println("TaskReceiveData activated!");
+
+  // Initialize ESP-NOW
+  if (esp_now_init() != 0)
+  {
+    Serial.println("Error initializing ESP-NOW");
+    vTaskDelete(NULL); // End the task if ESP-NOW initialization fails
+  }
+
+  // Register callback function for ESP-NOW reception
+  esp_now_register_recv_cb(OnDataRecv);
+
+  // Infinite loop to keep the task running
+  while (1)
+  {
+    vTaskDelay(pdMS_TO_TICKS(100)); // Yield task to prevent blocking
+  }
+}
+
+// Task to handle Firebase communication
+void TaskSendData(void *pvParameters)
+{
+  // Wait for Wi-Fi connection
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("\nConnected to Wi-Fi");
+
+  // Configure Firebase
+  config.api_key = API_KEY;
+  config.database_url = DATABASE_URL;
+
+  // Sign up with Firebase
+  if (Firebase.signUp(&config, &auth, "", ""))
+  {
+    Serial.println("Firebase sign-up successful.");
+    signupOK = true;
+  }
+  else
+  {
+    Serial.printf("Sign-up error: %s\n", config.signer.signupError.message.c_str());
+    vTaskDelete(NULL); // End the task if sign-up fails
+  }
+
+  config.token_status_callback = tokenStatusCallback;
+  Firebase.begin(&config, &auth);
+  Firebase.reconnectWiFi(true);
+
+  unsigned long lastTime = 0;
+
+  // Infinite loop to send data to Firebase every 2 seconds
+  while (1)
+  {
+    if (Firebase.ready() && signupOK && millis() - lastTime > 3000)
+    {
+      lastTime = millis();
+
+      // Send data to Firebase RTDB
+      if (Firebase.RTDB.setFloat(&fbdo, "currentState/LDR", myData.LDR))
+      {
+        Serial.println("LDR data sent!");
+      }
+      else
+      {
+        Serial.println(fbdo.errorReason());
+      }
+
+      // Send additional data to Firebase
+      Firebase.RTDB.setFloat(&fbdo, "currentState/dist", myData.dist);
+      Firebase.RTDB.setFloat(&fbdo, "currentState/smk", myData.smk);
+      Firebase.RTDB.setFloat(&fbdo, "currentState/motion", myData.motion);
+      Firebase.RTDB.setTimestamp(&fbdo, "currentState/timestamp");
+
+      FirebaseJson json;
+      json.set("dist", myData.dist);
+      json.set("smk", myData.smk);
+      json.set("motion", myData.motion);
+      json.set("ldr", myData.LDR);
+      json.set("timestamp/.sv", "timestamp");
+      if (Firebase.RTDB.pushJSON(&fbdo, "/log", &json))
+      {
+        Serial.println(String(fbdo.pushName()));
+      }
+      else
+      {
+        Serial.println(fbdo.errorReason());
+      }
+    }
+
+    vTaskDelay(pdMS_TO_TICKS(10)); // Yield task to prevent blocking
+  }
+}
+
+void setup()
+{
+  // Start Serial communication for debugging
+  Serial.begin(9600);
+  delay(5000);
+  Serial.println("Starting...");
+
+  // Initialize Wi-Fi connection
+  WiFi.mode(WIFI_AP_STA);
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+
+  Serial.print("Connecting to Wi-Fi");
+  // Wait for Wi-Fi connection
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("\nSetting as a Wi-Fi station");
+  Serial.print("Station IP Address: ");
+  Serial.println(WiFi.localIP());
+  Serial.print("Wi-Fi Channel: ");
+  Serial.println(WiFi.channel());
+  // Create tasks for receiving data and sending data
+  xTaskCreatePinnedToCore(TaskReceiveData, "ReceiveData", 20000, NULL, 1, &taskHandleReceive, 0);
+  xTaskCreatePinnedToCore(TaskSendData, "SendData", 20000, NULL, 1, NULL, 1);
+}
+
+void loop()
+{
+  // Empty loop since tasks are handling the operations
+}
