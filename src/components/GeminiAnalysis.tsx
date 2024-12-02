@@ -23,13 +23,13 @@ export function GeminiAnalysis() {
   const [analysis, setAnalysis] = useState<string>("")
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [apiKey, setApiKey] = useState<string>(
-    process.env.PUBLIC_GEMINI_API_KEY || "",
+    process.env.NEXT_PUBLIC_GEMINI_API_KEY || "",
   )
   const [isApiInitialized, setIsApiInitialized] = useState<boolean>(false)
 
   useEffect(() => {
-    setApiKey(process.env.PUBLIC_GEMINI_API_KEY || "")
-    initializeGeminiApi(process.env.PUBLIC_GEMINI_API_KEY || "")
+    setApiKey(process.env.NEXT_PUBLIC_GEMINI_API_KEY || "")
+    initializeGeminiApi(process.env.NEXT_PUBLIC_GEMINI_API_KEY || "")
     setIsApiInitialized(true)
   }, [])
 
