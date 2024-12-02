@@ -66,7 +66,7 @@ export async function startDiscordBot(
         .setTimestamp(date)
       break
     case "smoke":
-      if (+value < 500) return
+      if (+value <= 1000) return
       embed
         .setColor(0xff0000)
         .setTitle("Smoke Value Update")
