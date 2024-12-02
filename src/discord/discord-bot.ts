@@ -86,7 +86,7 @@ export async function startDiscordBot(
         .setDescription(`The motion value has been updated.`)
         .addFields({
           name: "New Value",
-          value: value.toString(),
+          value: value ? "✅ Detected" : "❌ Not Detected",
         })
         .setTimestamp(date)
       break
