@@ -1,3 +1,36 @@
+# Tech Stack
+
+This project is built using the following technologies:
+
+## Frontend
+- **[Next.js](https://nextjs.org/)**: React framework for server-side rendering and static site generation.
+- **[Tailwind CSS](https://tailwindcss.com/)**: A utility-first CSS framework.
+- **[ShadCN](https://ui.shadcn.com/)**: UI components with accessibility-first design.
+
+## Graphics and 3D
+- **[Three.js](https://threejs.org/)**: A JavaScript library for 3D graphics.
+
+## Backend and APIs
+- **[Firebase](https://firebase.google.com/)**: Backend services for real-time databases, authentication, and hosting.
+- **[Google Sheets API](https://developers.google.com/sheets/api)**: Integration for programmatic interactions with Google Sheets.
+- **[Discord.js](https://discord.js.org/)**: A library for interacting with the Discord API.
+- **[Gemini API](https://ai.google.dev/)**: API client for accessing Gemini model.
+
+## Scheduling and Time Management
+- **[Node-Schedule](https://github.com/node-schedule/node-schedule)**: A flexible job scheduler for Node.js.
+- **[Moment-Timezone](https://momentjs.com/timezone/)**: Utility for handling time zones and date manipulation.
+
+## Data Visualization and Content
+- **[Chart.js](https://www.chartjs.org/)**: A JavaScript library for visualizing data.
+- **[React-Markdown](https://github.com/remarkjs/react-markdown)**: A React component for rendering Markdown.
+
+---
+
+### Installation and Usage
+For setting up the project and running it locally, please refer to the [Getting Started](#getting-started) section of this document.
+
+---
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
